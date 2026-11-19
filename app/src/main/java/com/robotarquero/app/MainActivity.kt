@@ -187,13 +187,18 @@ class MainActivity : Activity() {
     }
 
     // ---------------- Bluetooth ----------------
+    private val permisosBt = arrayOf(
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_SCAN
+    )
+
     private fun tienePermiso(): Boolean =
         Build.VERSION.SDK_INT < 31 ||
-            checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+            permisosBt.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
 
     override fun onRequestPermissionsResult(code: Int, permissions: Array<out String>, results: IntArray) {
         super.onRequestPermissionsResult(code, permissions, results)
-        if (results.isNotEmpty() && results[0] == PackageManager.PERMISSION_GRANTED) {
+        if (results.isNotEmpty() && results.all { it == PackageManager.PERMISSION_GRANTED }) {
             elegirDispositivo()
         } else {
             estado("Permiso denegado. Actívalo en Ajustes > Apps > Robot arquero > Permisos > Dispositivos cercanos")
@@ -202,7 +207,7 @@ class MainActivity : Activity() {
 
     private fun elegirDispositivo() {
         if (!tienePermiso()) {
-            requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), 1)
+            requestPermissions(permisosBt, 1)
             return
         }
         val a = adapter
@@ -241,7 +246,7 @@ class MainActivity : Activity() {
                 var cand: BluetoothSocket? = null
                 try {
                     cand = crear()
-                    adapter?.cancelDiscovery()
+                    try { adapter?.cancelDiscovery() } catch (_: Exception) {}
                     cand.connect()
                     s = cand
                     break
